@@ -2,7 +2,7 @@
 # http://matplotlib.sourceforge.net/examples/animation/animate_decay.html
 # http://www.scipy.org/Cookbook/Matplotlib/Animations (GUI neutral)
 
-#TODO: add some animation support to this
+# TODO: add some animation support to this
 
 from matplotlib import pyplot
 show = pyplot.show
@@ -45,9 +45,8 @@ def plot_2d(data,paired=True,*args,**kwargs):
 
 
 def plot_3d(data,*args,**kwargs):
-  assert data.shape[1]%3 == 0, 'must have columns div. by 3'
+  assert data.shape[1] % 3 == 0, 'must have columns div. by 3'
   from mpl_toolkits.mplot3d import Axes3D
   ax = Axes3D(pyplot.gcf())
   for i in xrange(0,data.shape[1],3):
     ax.plot(data[:,i],data[:,i+1],data[:,i+2],*args,**kwargs)
-

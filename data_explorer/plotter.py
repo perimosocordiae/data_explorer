@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 from plot_utils import plot_1d, plot_2d, plot_3d
 import numpy as n
 from matplotlib import pyplot
@@ -10,20 +9,31 @@ from collections import deque
 
 def parse_args():
   op = OptionParser()
-  op.add_option('-3', action='store_true', default=False, help='plot in 3D', dest='three_d')
-  op.add_option('-t','--transpose', action='store_true', default=False, help='transpose data')
-  op.add_option('-y', action='store_true', default=False, help='use a 1:n range for x values')
-  op.add_option('-x', action='store_true', default=False, help='use first column for x values')
-  op.add_option('--log', action='store_true', default=False, help='plot with log scale y')
-  op.add_option('--marker', type=str, default='-', help='line style/marker flags')
+  op.add_option('-3', action='store_true', default=False,
+                help='plot in 3D', dest='three_d')
+  op.add_option('-t','--transpose', action='store_true',
+                default=False, help='transpose data')
+  op.add_option('-y', action='store_true', default=False,
+                help='use a 1:n range for x values')
+  op.add_option('-x', action='store_true', default=False,
+                help='use first column for x values')
+  op.add_option('--log', action='store_true',
+                default=False, help='plot with log scale y')
+  op.add_option('--marker', type=str, default='-',
+                help='line style/marker flags')
   op.add_option('--legend', type=str, default='', help='CSV legend labels')
   op.add_option('--xlabel', type=str, default='', help='X axis label')
   op.add_option('--ylabel', type=str, default='', help='Y axis label')
-  op.add_option('--delim', type=str, default=None, help='Column delimiter (default: whitespace)')
-  op.add_option('-s', type=int, default=1, help='smoothing value (default 1,no smoothing)')
-  op.add_option('-r', '--rolling', type=int, help='animated rolling graph buffer size')
-  op.add_option('-d', '--downsample', type=float, help='sampling rate, as a ratio of total # samples')
-  op.add_option('--hist', type=int, default=0, help='When >0, plots a histogram with n buckets')
+  op.add_option('--delim', type=str, default=None,
+                help='Column delimiter (default: whitespace)')
+  op.add_option('-s', type=int, default=1,
+                help='smoothing value (default 1,no smoothing)')
+  op.add_option('-r', '--rolling', type=int,
+                help='animated rolling graph buffer size')
+  op.add_option('-d', '--downsample', type=float,
+                help='sampling rate, as a ratio of total # samples')
+  op.add_option('--hist', type=int, default=0,
+                help='When >0, plots a histogram with n buckets')
   return op.parse_args()
 
 
