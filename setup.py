@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 from distutils.core import setup
 
 version = "0.1"
@@ -15,6 +14,7 @@ setup(name='data_explorer',
           'Intended Audience :: System Administrators',
           'Topic :: Terminals',
       ],
+      packages=['data_explorer'],
       scripts=[
           'data_explorer/plotter.py',
           'data_explorer/date2unixtime.py',

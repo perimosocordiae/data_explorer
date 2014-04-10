@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from plot_utils import plot_1d, plot_2d, plot_3d
+from data_explorer.plot_utils import plot_1d, plot_2d, plot_3d
 import numpy as np
 from matplotlib import pyplot
 from sys import stdin
