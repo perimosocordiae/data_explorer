@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from plot_utils import plot_1d, plot_2d, plot_3d
-import numpy as n
+import numpy as np
 from matplotlib import pyplot
 from sys import stdin
 from optparse import OptionParser
@@ -41,22 +41,22 @@ def preprocess(data, opts):
   if opts.transpose:
     data = data.T
   if opts.s > 2:
-    window = n.ones(opts.s)/float(opts.s)
+    window = np.ones(opts.s)/float(opts.s)
     if len(data.shape) == 1:
-      data = n.convolve(window,data,mode='valid')
+      data = np.convolve(window,data,mode='valid')
     else:
       if len(data.shape) > 1:
         assert opts.y, 'Can only convolve 1-d sequences'
       for i in xrange(data.shape[1]):
-        data[:,i] = n.convolve(window,data[:,i],mode='same')
+        data[:,i] = np.convolve(window,data[:,i],mode='same')
       pad = opts.s//2
       data = data[pad:-pad]
   if opts.downsample:
     assert len(data.shape) == 1, 'Multiple line downsampling is NYI'
     new_len = int(len(data) * opts.downsample)
-    old_xs = n.arange(len(data))
-    new_xs = n.unique(n.linspace(0,len(data),new_len).astype(int))
-    data = n.interp(new_xs, old_xs, data)
+    old_xs = np.arange(len(data))
+    new_xs = np.unique(np.linspace(0,len(data),new_len).astype(int))
+    data = np.interp(new_xs, old_xs, data)
   return data
 
 
@@ -81,7 +81,7 @@ def decorate(opts):
 
 
 def static_plot(opts, fh):
-  data = n.loadtxt(fh, delimiter=opts.delim)
+  data = np.loadtxt(fh, delimiter=opts.delim)
   data = preprocess(data, opts)
   if opts.hist > 0:
     pyplot.hist(data, opts.hist)
@@ -93,15 +93,15 @@ def static_plot(opts, fh):
 
 def rolling_plot(opts, fh):
   pyplot.ion()
-  data = n.zeros(opts.rolling)
+  data = np.zeros(opts.rolling)
   ax = pyplot.gca()
   ax.set_autoscale_on(True)
   line2d, = ax.plot(data)
   buf = deque(maxlen=opts.rolling)
   delim = opts.delim if opts.delim is not None else ' '
   for line in fh:
-    buf.append(n.fromstring(line, sep=delim))
-    data[:len(buf)] = n.array(buf)
+    buf.append(np.fromstring(line, sep=delim))
+    data[:len(buf)] = np.array(buf)
     line2d.set_ydata(data)
     ax.relim()
     ax.autoscale_view(True,True,True)
