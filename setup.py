@@ -10,14 +10,14 @@ setup(name='data_explorer',
       author_email='perimosocordiae@gmail.com',
       url='http://github.com/perimosocordiae/data_explorer',
       classifiers=[
-            'Development Status :: 4 - Beta',
-            'Programming Language :: Python',
-            'Intended Audience :: System Administrators',
-            'Topic :: Terminals',
-            ],
-      scripts = ['data_explorer/plotter.py', 
-                 'data_explorer/date2unixtime.py',
-                 'data_explorer/fit_curve.py'
-                ]
-)
-
+          'Development Status :: 4 - Beta',
+          'Programming Language :: Python',
+          'Intended Audience :: System Administrators',
+          'Topic :: Terminals',
+      ],
+      scripts=[
+          'data_explorer/plotter.py',
+          'data_explorer/date2unixtime.py',
+          'data_explorer/fit_curve.py'
+      ]
+      )
