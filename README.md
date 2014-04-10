@@ -29,7 +29,7 @@ Example usage:
     fit_curve.py -c -p --args a,b "a*x + b" data_file.txt
 
     fit_curve.py -c -p --args a,b,c "a*log(x/b) + c^x" data_file.txt
-    
+
 Dependencies:
 
    * numpy
@@ -46,3 +46,16 @@ Example usage:
 
     cut -f1 something.log | date2unixtime.py
 
+
+### describe.py
+
+Computes summary statistics for a set of data.
+
+Example usage:
+
+    describe.py <data_file.txt
+
+Dependencies:
+
+   * numpy
+   * scipy

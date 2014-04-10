@@ -18,6 +18,7 @@ setup(name='data_explorer',
       scripts=[
           'data_explorer/plotter.py',
           'data_explorer/date2unixtime.py',
+          'data_explorer/describe.py',
           'data_explorer/fit_curve.py'
       ]
       )
