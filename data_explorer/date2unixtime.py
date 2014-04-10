@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-import sys,re
+import sys
+import re
 from datetime import datetime as dt
 from time import mktime
 
@@ -10,13 +10,13 @@ fmts = ["%m %d %Y","%Y %m %d","%m %d %y","%y %m %d"]
 def try_parse(date_str):
   for i,fmt in enumerate(fmts):
     try:
-      stamp = dt.strptime(date,fmt)
+      stamp = dt.strptime(date_str, fmt)
       break
     except ValueError:
       continue
   else:
     # no format was valid
-    raise ValueError("couldn't parse '%s'"%date)
+    raise ValueError("couldn't parse '%s'" % date_str)
   # clever trick: move the matching fmt to the front of the list
   if i > 0:
     fmts.insert(0,fmts.pop(i))
