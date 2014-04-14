@@ -104,7 +104,12 @@ def rolling_plot(opts, fh):
   data = np.zeros(opts.rolling)
   ax = pyplot.gca()
   ax.set_autoscale_on(True)
-  line2d, = ax.plot(data)
+  ax.set_xlabel(opts.xlabel)
+  ax.set_ylabel(opts.ylabel)
+  if opts.log:
+    line2d, = ax.semilogy(data+1, opts.marker)
+  else:
+    line2d, = ax.plot(data, opts.marker)
   buf = deque(maxlen=opts.rolling)
   delim = opts.delim if opts.delim is not None else ' '
   line = fh.readline()
