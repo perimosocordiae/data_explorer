@@ -107,13 +107,16 @@ def rolling_plot(opts, fh):
   line2d, = ax.plot(data)
   buf = deque(maxlen=opts.rolling)
   delim = opts.delim if opts.delim is not None else ' '
-  for line in fh:
+  line = fh.readline()
+  while line:
     buf.append(np.fromstring(line, sep=delim))
     data[:len(buf)] = np.array(buf)
     line2d.set_ydata(data)
     ax.relim()
     ax.autoscale_view(True,True,True)
     pyplot.draw()
+    pyplot.pause(0.0001)
+    line = fh.readline()
 
 
 if __name__ == '__main__':
