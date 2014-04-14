@@ -110,7 +110,7 @@ def rolling_plot(opts, fh):
   line = fh.readline()
   while line:
     buf.append(np.fromstring(line, sep=delim))
-    data[:len(buf)] = np.array(buf)
+    data[:len(buf)] = np.array(buf).ravel()
     line2d.set_ydata(data)
     ax.relim()
     ax.autoscale_view(True,True,True)
