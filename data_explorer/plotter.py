@@ -92,6 +92,14 @@ def static_plot(opts, fh):
 
 
 def rolling_plot(opts, fh):
+  disallowed_options = [
+      ('-t',opts.transpose), ('-3',opts.three_d), ('-x',opts.x), ('-y',opts.y),
+      ('-s > 1', opts.s > 1), ('-d', opts.downsample), ('--hist', opts.hist)
+  ]
+  for name,check in disallowed_options:
+    if check:
+      print "Option %s is not supported for rolling plots." % name
+      return
   pyplot.ion()
   data = np.zeros(opts.rolling)
   ax = pyplot.gca()
