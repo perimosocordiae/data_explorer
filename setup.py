@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from distutils.core import setup
 
-version = "0.1"
+version = "0.1.1"
 setup(name='data_explorer',
       version=version,
       description='Command line utilities for data exploration',
