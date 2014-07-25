@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from data_explorer.plot_utils import plot_1d, plot_2d, plot_3d
+import re
 import numpy as np
 from matplotlib import pyplot
 from sys import stdin
@@ -24,6 +25,8 @@ def parse_args():
   op.add_option('--legend', type=str, default='', help='CSV legend labels')
   op.add_option('--xlabel', type=str, default='', help='X axis label')
   op.add_option('--ylabel', type=str, default='', help='Y axis label')
+  op.add_option('--title', type=str, default='%s',
+                help='Plot title (%s expands to filename)')
   op.add_option('--delim', type=str, default=None,
                 help='Column delimiter (default: whitespace)')
   op.add_option('-s', type=int, default=1,
@@ -71,27 +74,28 @@ def plot(data, opts):
     plot_2d(data,(not opts.x),opts.marker,log=opts.log)
 
 
-def decorate(opts):
+def decorate(opts, filename):
   if opts.legend:
     pyplot.legend(opts.legend.split(','),loc='best')
   if opts.xlabel:
     pyplot.xlabel(opts.xlabel)
   if opts.ylabel:
     pyplot.ylabel(opts.ylabel)
+  if opts.title:
+    pyplot.title(re.subn('%s', filename, opts.title)[0])
 
 
-def static_plot(opts, fh):
+def static_plot(opts, fh, filename):
   data = np.loadtxt(fh, delimiter=opts.delim)
   data = preprocess(data, opts)
   if opts.hist > 0:
     pyplot.hist(data, opts.hist)
   else:
     plot(data, opts)
-  decorate(opts)
-  pyplot.show()
+  decorate(opts, filename)
 
 
-def rolling_plot(opts, fh):
+def rolling_plot(opts, fh, filename):
   disallowed_options = [
       ('-t',opts.transpose), ('-3',opts.three_d), ('-x',opts.x), ('-y',opts.y),
       ('-s > 1', opts.s > 1), ('-d', opts.downsample), ('--hist', opts.hist)
@@ -103,15 +107,18 @@ def rolling_plot(opts, fh):
   pyplot.ion()
   data = np.zeros(opts.rolling)
   ax = pyplot.gca()
+  op.add_option('--ylabel', type=str, default='', help='Y axis label')
   ax.set_autoscale_on(True)
   ax.set_xlabel(opts.xlabel)
   ax.set_ylabel(opts.ylabel)
+  ax.set_title(re.subn('%s', filename, opts.title)[0])
   if opts.log:
     line2d, = ax.semilogy(data+1, opts.marker)
   else:
     line2d, = ax.plot(data, opts.marker)
   buf = deque(maxlen=opts.rolling)
   delim = opts.delim if opts.delim is not None else ' '
+
   line = fh.readline()
   while line:
     buf.append(np.fromstring(line, sep=delim))
@@ -126,8 +133,12 @@ def rolling_plot(opts, fh):
 
 if __name__ == '__main__':
   opts, args = parse_args()
-  fh = open(args[0]) if args else stdin
-  if opts.rolling:
-    rolling_plot(opts, fh)
-  else:
-    static_plot(opts, fh)
+  files = args if args else ('-',)
+  for f in files:
+    fh = stdin if f == '-' else open(f)
+    pyplot.figure()
+    if opts.rolling:
+      rolling_plot(opts, fh, f)
+    else:
+      static_plot(opts, fh, f)
+  pyplot.show()
