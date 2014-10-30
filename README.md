@@ -1,5 +1,8 @@
 # data_explorer
 
+[![PyPI version](https://badge.fury.io/py/data_explorer.svg)](http://badge.fury.io/py/data_explorer)
+[![Download stats](https://pypip.in/download/data_explorer/badge.svg)](https://pypi.python.org/pypi/data_explorer)
+
 Command-line utilities for exploring data.
 
 Somewhat inspired by [bit.ly's data_hacks](https://github.com/bitly/data_hacks).
