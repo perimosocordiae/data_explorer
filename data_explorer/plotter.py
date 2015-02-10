@@ -3,6 +3,7 @@ from data_explorer.plot_utils import plot_1d, plot_2d, plot_3d
 import re
 import numpy as np
 from matplotlib import pyplot
+from matplotlib import animation
 from sys import stdin
 from optparse import OptionParser
 from collections import deque
@@ -104,41 +105,42 @@ def rolling_plot(opts, fh, filename):
     if check:
       print "Option %s is not supported for rolling plots." % name
       return
-  pyplot.ion()
-  data = np.zeros(opts.rolling)
-  ax = pyplot.gca()
-  op.add_option('--ylabel', type=str, default='', help='Y axis label')
+
+  fig, ax = pyplot.subplots()
   ax.set_autoscale_on(True)
   ax.set_xlabel(opts.xlabel)
   ax.set_ylabel(opts.ylabel)
   ax.set_title(re.subn('%s', filename, opts.title)[0])
+
+  data = np.zeros(opts.rolling)
   if opts.log:
     line2d, = ax.semilogy(data+1, opts.marker)
   else:
     line2d, = ax.plot(data, opts.marker)
+
   buf = deque(maxlen=opts.rolling)
   delim = opts.delim if opts.delim is not None else ' '
 
-  line = fh.readline()
-  while line:
+  def anim_helper(line):
     buf.append(np.fromstring(line, sep=delim))
     data[:len(buf)] = np.array(buf).ravel()
     line2d.set_ydata(data)
     ax.relim()
     ax.autoscale_view(True,True,True)
-    pyplot.draw()
-    pyplot.pause(0.0001)
-    line = fh.readline()
+    ax.figure.canvas.draw()
+    return line2d,
 
+  return animation.FuncAnimation(fig, anim_helper, fh, blit=True,
+                                 interval=10, repeat=False)
 
 if __name__ == '__main__':
   opts, args = parse_args()
   files = args if args else ('-',)
   for f in files:
     fh = stdin if f == '-' else open(f)
-    pyplot.figure()
     if opts.rolling:
-      rolling_plot(opts, fh, f)
+      _ = rolling_plot(opts, fh, f)
     else:
+      pyplot.figure()
       static_plot(opts, fh, f)
   pyplot.show()
