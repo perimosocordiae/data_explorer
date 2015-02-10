@@ -75,20 +75,20 @@ def plot(data, opts):
     plot_2d(data,(not opts.x),opts.marker,log=opts.log)
 
 
-def decorate(opts, filename):
+def decorate(opts, filename, ax=None):
+  if ax is None:
+    ax = pyplot.gca()
+  ax.set_xlabel(opts.xlabel)
+  ax.set_ylabel(opts.ylabel)
+  ax.set_title(re.subn('%s', filename, opts.title)[0])
   if opts.legend:
-    pyplot.legend(opts.legend.split(','),loc='best')
-  if opts.xlabel:
-    pyplot.xlabel(opts.xlabel)
-  if opts.ylabel:
-    pyplot.ylabel(opts.ylabel)
-  if opts.title:
-    pyplot.title(re.subn('%s', filename, opts.title)[0])
+    ax.legend(opts.legend.split(','), loc='best')
 
 
 def static_plot(opts, fh, filename):
   data = np.loadtxt(fh, delimiter=opts.delim)
   data = preprocess(data, opts)
+  pyplot.figure()
   if opts.hist > 0:
     pyplot.hist(data, opts.hist)
   else:
@@ -108,9 +108,7 @@ def rolling_plot(opts, fh, filename):
 
   fig, ax = pyplot.subplots()
   ax.set_autoscale_on(True)
-  ax.set_xlabel(opts.xlabel)
-  ax.set_ylabel(opts.ylabel)
-  ax.set_title(re.subn('%s', filename, opts.title)[0])
+  decorate(opts, filename, ax=ax)
 
   data = np.zeros(opts.rolling)
   if opts.log:
@@ -141,6 +139,5 @@ if __name__ == '__main__':
     if opts.rolling:
       _ = rolling_plot(opts, fh, f)
     else:
-      pyplot.figure()
       static_plot(opts, fh, f)
   pyplot.show()
