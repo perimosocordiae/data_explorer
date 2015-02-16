@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 import sys
 import re
+from argparse import ArgumentParser
 from datetime import datetime as dt
 from time import mktime
 
 ALL_FMTS = {
     2: ["%m %d"],
     3: ["%m %d %Y","%Y %m %d","%m %d %y","%y %m %d"],
-    4: ["%a %b %d %H:%M:%S %Y"],
+    5: ["%a %b %d %H:%M:%S %Y"],
 }
 
 
@@ -27,15 +28,34 @@ def try_parse(date_str, fmts):
   return stamp
 
 
-def main(fh):
+def main(fh, col, delim, comment_regex):
+  ignore_patt = re.compile(comment_regex)
   for line in fh:
-    parts = filter(None,re.split('\D+',line.strip()))
-    if len(parts) not in ALL_FMTS:
+    if ignore_patt.match(line):
+      sys.stdout.write(line)
       continue
-    stamp = try_parse(' '.join(parts), ALL_FMTS[len(parts)])
-    print mktime(stamp.timetuple())
+    fields = line.strip().split(delim)
+    date_str = fields[col-1]
+    parts = filter(None,re.split('[\t /.-]+', date_str))
+    if len(parts) not in ALL_FMTS:
+      sys.stdout.write(line)
+    else:
+      stamp = try_parse(' '.join(parts), ALL_FMTS[len(parts)])
+      unixtime = mktime(stamp.timetuple())
+      fields[col-1] = str(unixtime)
+      print delim.join(fields)
 
 
 if __name__ == '__main__':
-  # TODO: allow positional args too
-  main(sys.stdin)
+  ap = ArgumentParser(
+      description='Convert textual dates into numeric timestamps.')
+  ap.add_argument('file', type=open, nargs='?', default=sys.stdin,
+                  help='Input file [default: stdin]')
+  ap.add_argument('--col', type=int, default=1,
+                  help='Column to convert [default: %(default)d]')
+  ap.add_argument('--delim', type=str, default='\t',
+                  help='Column delimiter [default: %(default)r]')
+  ap.add_argument('--comment', type=str, default='^#',
+                  help='Regexp for comment lines [default: %(default)s]')
+  args = ap.parse_args()
+  main(args.file, args.col, args.delim, args.comment)
