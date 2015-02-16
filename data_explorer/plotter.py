@@ -5,63 +5,70 @@ import numpy as np
 from datetime import datetime
 from matplotlib import pyplot, animation
 from sys import stdin
-from optparse import OptionParser
+from argparse import ArgumentParser
 from collections import deque
 
 
 def parse_args():
-  op = OptionParser()
-  op.add_option('-3', action='store_true', default=False,
-                help='plot in 3D', dest='three_d')
-  op.add_option('-t','--transpose', action='store_true',
-                default=False, help='transpose data')
-  op.add_option('-y', action='store_true', default=False,
-                help='use a 1:n range for x values')
-  op.add_option('-x', action='store_true', default=False,
-                help='use first column for x values')
-  op.add_option('--log', action='store_true',
-                default=False, help='plot with log scale y')
-  op.add_option('--marker', type=str, default='-',
-                help='line style/marker flags')
-  op.add_option('--legend', type=str, default='', help='CSV legend labels')
-  op.add_option('--xlabel', type=str, default='', help='X axis label')
-  op.add_option('--ylabel', type=str, default='', help='Y axis label')
-  op.add_option('--title', type=str, default='%s',
-                help='Plot title (%s expands to filename)')
-  op.add_option('--delim', type=str, default=None,
-                help='Column delimiter (default: whitespace)')
-  op.add_option('-s', type=int, default=1,
-                help='smoothing value (default 1,no smoothing)')
-  op.add_option('-r', '--rolling', type=int,
-                help='animated rolling graph buffer size')
-  op.add_option('-d', '--downsample', type=float,
-                help='sampling rate, as a ratio of total # samples')
-  op.add_option('--hist', type=int, default=0,
-                help='When >0, plots a histogram with n buckets')
-  op.add_option('--time', action='store_true', default=False,
-                help='Treat the first column as date/time. (Implies -x)')
-  return op.parse_args()
+  ap = ArgumentParser(description='General-purpose plotter for columns of data')
+  ap.add_argument('files', nargs='*', default=('-',), help='File(s) to plot')
+  ap.add_argument('-2', action='store_true', default=False,
+                  help='Treat columns as (x,y) points', dest='two_d')
+  ap.add_argument('-3', action='store_true', default=False,
+                  help='Treat columns as (x,y,z) points', dest='three_d')
+  ap.add_argument('-t','--transpose', action='store_true', default=False,
+                  help='Convert rows to columns before plotting')
+  ap.add_argument('-x', action='store_true', default=False,
+                  help='Use first column for x values')
+  ap.add_argument('--log', action='store_true', default=False,
+                  help='Use a log scale for the y axis')
+  ap.add_argument('--delim', type=str, default=None,
+                  help='Column delimiter (default: whitespace)')
+  ap.add_argument('--hist', type=int, default=0,
+                  help='When >0, plots a histogram with n buckets')
+
+  ag = ap.add_argument_group('Styling Options')
+  ag.add_argument('--marker', type=str, default='-',
+                  help='Line style/marker flags [default: %(default)s]')
+  ag.add_argument('--xlabel', type=str, default='', help='X axis label')
+  ag.add_argument('--ylabel', type=str, default='', help='Y axis label')
+  ag.add_argument('--title', type=str, default='%s',
+                  help='Plot title (%s expands to filename)')
+  ag.add_argument('--legend', type=str, default='',
+                  help='Legend labels, comma-separated')
+
+  ag = ap.add_argument_group('Preprocessing Options')
+  ag.add_argument('-s', type=int, default=1,
+                  help='When >2, smooth data with window of size n')
+  ag.add_argument('-r', '--rolling', type=int,
+                  help='Animate a rolling graph with buffer of size n')
+  ag.add_argument('-d', '--downsample', type=float,
+                  help='Sampling rate, as a ratio of total # samples')
+  ag.add_argument('--time', action='store_true', default=False,
+                  help='Treat the first column as date/time. (Implies -x)')
+  return ap.parse_args()
 
 
 def preprocess(data, opts):
   if opts.transpose:
     data = data.T
   if opts.s > 2:
+    if opts.two_d or opts.three_d:
+      raise ValueError('Can only convolve 1-d sequences')
     window = np.ones(opts.s)/float(opts.s)
-    if len(data.shape) == 1:
-      data = np.convolve(window,data,mode='valid')
+    if data.ndim == 1:
+      data = np.convolve(window, data, mode='valid')
     else:
-      if len(data.shape) > 1:
-        assert opts.y, 'Can only convolve 1-d sequences'
       for i in xrange(data.shape[1]):
-        data[:,i] = np.convolve(window,data[:,i],mode='same')
+        data[:,i] = np.convolve(window, data[:,i], mode='same')
       pad = opts.s//2
       data = data[pad:-pad]
   if opts.downsample:
-    assert len(data.shape) == 1, 'Multiple line downsampling is NYI'
-    new_len = int(len(data) * opts.downsample)
-    old_xs = np.arange(len(data))
-    new_xs = np.unique(np.linspace(0,len(data),new_len).astype(int))
+    assert data.ndim == 1, 'Multiple line downsampling is NYI'
+    old_len = len(data)
+    new_len = int(old_len * opts.downsample)
+    old_xs = np.arange(old_len)
+    new_xs = np.unique(np.linspace(0,old_len,new_len).astype(int))
     data = np.interp(new_xs, old_xs, data)
   return data
 
@@ -69,15 +76,16 @@ def preprocess(data, opts):
 def plot(data, opts):
   if opts.three_d:
     return plot_3d(data, opts.marker)
-  if opts.y or data.ndim == 1 or data.shape[1] == 1:
-    xdata = None
-  elif opts.x or opts.time:
+  if opts.two_d:
+    return plot_2d(data, opts.marker, log=opts.log)
+  if opts.x:
     xdata = data[:,0]
     data = data[:,1:]
+  elif opts.time:
+    xdata = map(datetime.fromtimestamp, data[:,0])
+    data = data[:,1:]
   else:
-    return plot_2d(data, opts.marker, log=opts.log)
-  if opts.time:
-    xdata = map(datetime.fromtimestamp, xdata)
+    xdata = None
   plot_1d(xdata, data, opts.marker, log=opts.log)
 
 
@@ -104,7 +112,8 @@ def static_plot(opts, fh, filename):
 
 def rolling_plot(opts, fh, filename):
   disallowed_options = [
-      ('-t',opts.transpose), ('-3',opts.three_d), ('-x',opts.x), ('-y',opts.y),
+      ('-t',opts.transpose), ('-3',opts.three_d), ('-2',opts.two_d),
+      ('-x',opts.x), ('--time',opts.time),
       ('-s > 1', opts.s > 1), ('-d', opts.downsample), ('--hist', opts.hist)
   ]
   for name,check in disallowed_options:
@@ -138,12 +147,11 @@ def rolling_plot(opts, fh, filename):
                                  interval=10, repeat=False)
 
 if __name__ == '__main__':
-  opts, args = parse_args()
-  files = args if args else ('-',)
-  for f in files:
+  args = parse_args()
+  for f in args.files:
     fh = stdin if f == '-' else open(f)
-    if opts.rolling:
-      _ = rolling_plot(opts, fh, f)
+    if args.rolling:
+      _ = rolling_plot(args, fh, f)
     else:
-      static_plot(opts, fh, f)
+      static_plot(args, fh, f)
   pyplot.show()
