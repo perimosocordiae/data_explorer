@@ -2,8 +2,8 @@
 from data_explorer.plot_utils import plot_1d, plot_2d, plot_3d
 import re
 import numpy as np
-from matplotlib import pyplot
-from matplotlib import animation
+from datetime import datetime
+from matplotlib import pyplot, animation
 from sys import stdin
 from optparse import OptionParser
 from collections import deque
@@ -38,6 +38,8 @@ def parse_args():
                 help='sampling rate, as a ratio of total # samples')
   op.add_option('--hist', type=int, default=0,
                 help='When >0, plots a histogram with n buckets')
+  op.add_option('--time', action='store_true', default=False,
+                help='Treat the first column as date/time. (Implies -x)')
   return op.parse_args()
 
 
@@ -66,13 +68,17 @@ def preprocess(data, opts):
 
 def plot(data, opts):
   if opts.three_d:
-    plot_3d(data,opts.marker)
-  elif len(data.shape) == 1 or data.shape[1] == 1:
-    plot_1d(data,opts.marker,log=opts.log)
-  elif opts.y:
-    plot_1d(data,opts.marker,log=opts.log)
+    return plot_3d(data, opts.marker)
+  if opts.y or data.ndim == 1 or data.shape[1] == 1:
+    xdata = None
+  elif opts.x or opts.time:
+    xdata = data[:,0]
+    data = data[:,1:]
   else:
-    plot_2d(data,(not opts.x),opts.marker,log=opts.log)
+    return plot_2d(data, opts.marker, log=opts.log)
+  if opts.time:
+    xdata = map(datetime.fromtimestamp, xdata)
+  plot_1d(xdata, data, opts.marker, log=opts.log)
 
 
 def decorate(opts, filename, ax=None):

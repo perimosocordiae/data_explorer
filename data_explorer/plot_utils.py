@@ -1,3 +1,4 @@
+import numpy as np
 from matplotlib import pyplot
 
 
@@ -11,30 +12,23 @@ def _make_plot_func(kwargs):
   return plot
 
 
-def plot_1d(data,*args,**kwargs):
-  if len(data.shape) == 1:  # 1-d array
-    data.shape = (data.shape[0],1)
+def plot_1d(xdata, data, *args, **kwargs):
+  data = np.column_stack((data,))
   plot = _make_plot_func(kwargs)
-  for i in xrange(data.shape[1]):
-    plot(data[:,i],*args,**kwargs)
-
-
-def plot_1d_with_x(data,*args,**kwargs):
-  assert data.shape[1] > 1, 'must have at least 2 columns'
-  plot = _make_plot_func(kwargs)
-  for i in xrange(1,data.shape[1]):
-    plot(data[:,0],data[:,i],*args,**kwargs)
-
-
-def plot_2d(data,paired=True,*args,**kwargs):
-  plot = _make_plot_func(kwargs)
-  if paired:  # paired flag
-    assert data.shape[1] % 2 == 0, 'must have even number of columns for paired plotting'
-    for i in xrange(0,data.shape[1],2):
-      plot(data[:,i],data[:,i+1],*args,**kwargs)
+  if xdata is not None:
+    for col in data.T:
+      plot(xdata, col, *args, **kwargs)
   else:
-    for i in xrange(1,data.shape[1]):
-      plot(data[:,0],data[:,i],*args,**kwargs)
+    for col in data.T:
+      plot(col, *args, **kwargs)
+
+
+def plot_2d(data, *args, **kwargs):
+  assert data.shape[1] % 2 == 0, (
+      'must have even number of columns for paired plotting')
+  plot = _make_plot_func(kwargs)
+  for i in xrange(0,data.shape[1],2):
+    plot(data[:,i],data[:,i+1],*args,**kwargs)
 
 
 def plot_3d(data,*args,**kwargs):
