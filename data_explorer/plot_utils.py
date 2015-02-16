@@ -1,11 +1,4 @@
-# for reference when doing animations:
-# http://matplotlib.sourceforge.net/examples/animation/animate_decay.html
-# http://www.scipy.org/Cookbook/Matplotlib/Animations (GUI neutral)
-
-# TODO: add some animation support to this
-
 from matplotlib import pyplot
-show = pyplot.show
 
 
 def _make_plot_func(kwargs):
