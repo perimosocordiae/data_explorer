@@ -12,20 +12,28 @@ from collections import deque
 def parse_args():
   ap = ArgumentParser(description='General-purpose plotter for columns of data')
   ap.add_argument('files', nargs='*', default=('-',), help='File(s) to plot')
-  ap.add_argument('-2', action='store_true', default=False,
-                  help='Treat columns as (x,y) points', dest='two_d')
-  ap.add_argument('-3', action='store_true', default=False,
-                  help='Treat columns as (x,y,z) points', dest='three_d')
-  ap.add_argument('-t','--transpose', action='store_true', default=False,
-                  help='Convert rows to columns before plotting')
-  ap.add_argument('-x', action='store_true', default=False,
-                  help='Use first column for x values')
   ap.add_argument('--log', action='store_true', default=False,
                   help='Use a log scale for the y axis')
-  ap.add_argument('--delim', type=str, default=None,
-                  help='Column delimiter (default: whitespace)')
   ap.add_argument('--hist', type=int, default=0,
                   help='When >0, plots a histogram with n buckets')
+
+  ag = ap.add_argument_group('Input Options')
+  ag.add_argument('-x', action='store_true', default=False,
+                  help='Use first column for x values')
+  ag.add_argument('-2', action='store_true', default=False, dest='two_d',
+                  help='Treat pairs of columns as (x,y) points')
+  ag.add_argument('-3', action='store_true', default=False, dest='three_d',
+                  help='Treat triples of columns as (x,y,z) points')
+  ag.add_argument('--transpose', action='store_true', default=False,
+                  help='Convert rows to columns before plotting')
+  ag.add_argument('--delim', type=str, default=None,
+                  help='Column delimiter (default: whitespace)')
+  ag.add_argument('--columns', type=int, nargs='+', default=[],
+                  help='Space-separated column numbers to use; first col is 0.')
+  ag.add_argument('--skip', type=int, default=0,
+                  help='Number of rows to skip (default: 0)')
+  ag.add_argument('--comment', type=str, default='#',
+                  help='Start of comment character (default: #)')
 
   ag = ap.add_argument_group('Styling Options')
   ag.add_argument('--marker', type=str, default='-',
@@ -38,11 +46,11 @@ def parse_args():
                   help='Legend labels, comma-separated')
 
   ag = ap.add_argument_group('Preprocessing Options')
-  ag.add_argument('-s', type=int, default=1,
+  ag.add_argument('--smooth', type=int, default=1,
                   help='When >2, smooth data with window of size n')
-  ag.add_argument('-r', '--rolling', type=int,
+  ag.add_argument('--rolling', type=int,
                   help='Animate a rolling graph with buffer of size n')
-  ag.add_argument('-d', '--downsample', type=float,
+  ag.add_argument('--downsample', type=float,
                   help='Sampling rate, as a ratio of total # samples')
   ag.add_argument('--time', action='store_true', default=False,
                   help='Treat the first column as date/time. (Implies -x)')
@@ -52,16 +60,16 @@ def parse_args():
 def preprocess(data, opts):
   if opts.transpose:
     data = data.T
-  if opts.s > 2:
+  if opts.smooth > 2:
     if opts.two_d or opts.three_d:
       raise ValueError('Can only convolve 1-d sequences')
-    window = np.ones(opts.s)/float(opts.s)
+    window = np.ones(opts.smooth) / float(opts.smooth)
     if data.ndim == 1:
       data = np.convolve(window, data, mode='valid')
     else:
       for i in xrange(data.shape[1]):
         data[:,i] = np.convolve(window, data[:,i], mode='same')
-      pad = opts.s//2
+      pad = opts.smooth // 2
       data = data[pad:-pad]
   if opts.downsample:
     assert data.ndim == 1, 'Multiple line downsampling is NYI'
@@ -100,7 +108,9 @@ def decorate(opts, filename, ax=None):
 
 
 def static_plot(opts, fh, filename):
-  data = np.loadtxt(fh, delimiter=opts.delim)
+  cols = opts.columns or None
+  data = np.loadtxt(fh, delimiter=opts.delim, usecols=cols, skiprows=opts.skip,
+                    comments=opts.comment)
   data = preprocess(data, opts)
   pyplot.figure()
   if opts.hist > 0:
@@ -112,9 +122,11 @@ def static_plot(opts, fh, filename):
 
 def rolling_plot(opts, fh, filename):
   disallowed_options = [
-      ('-t',opts.transpose), ('-3',opts.three_d), ('-2',opts.two_d),
-      ('-x',opts.x), ('--time',opts.time),
-      ('-s > 1', opts.s > 1), ('-d', opts.downsample), ('--hist', opts.hist)
+      ('--transpose',opts.transpose), ('-3',opts.three_d), ('-2',opts.two_d),
+      ('-x',opts.x), ('--time',opts.time), ('--hist', opts.hist),
+      ('--smooth > 1', opts.smooth > 1), ('--downsample', opts.downsample),
+      ('--columns', opts.columns), ('--skip', opts.skip),
+      ('--comment', opts.comment != '#')
   ]
   for name,check in disallowed_options:
     if check:
