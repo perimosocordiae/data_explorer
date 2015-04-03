@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-version = "0.1.3"
+version = "0.1.4"
 setup(name='data_explorer',
       version=version,
       description='Command line utilities for data exploration',
