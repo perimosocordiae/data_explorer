@@ -29,7 +29,7 @@ def parse_args():
   ag.add_argument('--delim', type=str, default=None,
                   help='Column delimiter (default: whitespace)')
   ag.add_argument('--columns', type=int, nargs='+', default=[],
-                  help='Space-separated column numbers to use; first col is 0.')
+                  help='Space-separated column numbers to use; first col is 1.')
   ag.add_argument('--skip', type=int, default=0,
                   help='Number of rows to skip (default: 0)')
   ag.add_argument('--comment', type=str, default='#',
@@ -108,7 +108,10 @@ def decorate(opts, filename, ax=None):
 
 
 def static_plot(opts, fh, filename):
-  cols = opts.columns or None
+  if opts.columns:
+    cols = [c-1 for c in opts.columns]
+  else:
+    cols = None
   data = np.loadtxt(fh, delimiter=opts.delim, usecols=cols, skiprows=opts.skip,
                     comments=opts.comment)
   data = preprocess(data, opts)
