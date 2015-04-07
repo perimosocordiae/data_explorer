@@ -2,38 +2,48 @@ import numpy as np
 from matplotlib import pyplot
 
 
-def _make_plot_func(kwargs):
-  plot = pyplot.plot
-  if 'log' in kwargs:
-    if kwargs['log']:
-      plot = pyplot.semilogy
-    del kwargs['log']
-  kwargs['hold'] = True
-  return plot
+def _make_plot_func(ax, marker, color):
+  kwargs = dict(marker=marker)
+  if color is not None:
+    kwargs['c'] = color
+    fn = lambda *args: ax.scatter(*args, **kwargs)
+  else:
+    kwargs['hold'] = True
+    fn = lambda *args: ax.plot(*args, **kwargs)
+  return fn
 
 
-def plot_1d(xdata, data, *args, **kwargs):
+def plot_1d(xdata, data, marker, color=None, log=False):
   data = np.column_stack((data,))
-  plot = _make_plot_func(kwargs)
+  ax = pyplot.gca()
+  plot = _make_plot_func(ax, marker, color)
   if xdata is not None:
     for col in data.T:
-      plot(xdata, col, *args, **kwargs)
+      plot(xdata, col)
   else:
     for col in data.T:
-      plot(col, *args, **kwargs)
+      plot(col)
+  if log:
+    ax.set_yscale('log')
 
 
-def plot_2d(data, *args, **kwargs):
+def plot_2d(data, marker, color=None, log=False):
   assert data.shape[1] % 2 == 0, (
       'must have even number of columns for paired plotting')
-  plot = _make_plot_func(kwargs)
-  for i in xrange(0,data.shape[1],2):
-    plot(data[:,i],data[:,i+1],*args,**kwargs)
+  ax = pyplot.gca()
+  plot = _make_plot_func(ax, marker, color)
+  for i in xrange(0, data.shape[1], 2):
+    plot(data[:,i], data[:,i+1])
+  if log:
+    ax.set_yscale('log')
 
 
-def plot_3d(data,*args,**kwargs):
+def plot_3d(data, marker, color=None, log=False):
   assert data.shape[1] % 3 == 0, 'must have columns div. by 3'
   from mpl_toolkits.mplot3d import Axes3D
   ax = Axes3D(pyplot.gcf())
-  for i in xrange(0,data.shape[1],3):
-    ax.plot(data[:,i],data[:,i+1],data[:,i+2],*args,**kwargs)
+  plot = _make_plot_func(ax, marker, color)
+  for i in xrange(0, data.shape[1], 3):
+    plot(data[:,i], data[:,i+1], data[:,i+2])
+  if log:
+    ax.set_yscale('log')

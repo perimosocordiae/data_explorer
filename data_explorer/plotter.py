@@ -44,6 +44,8 @@ def parse_args():
                   help='Plot title (%s expands to filename)')
   ag.add_argument('--legend', type=str, default='',
                   help='Legend labels, comma-separated')
+  ag.add_argument('--color', type=int, default=None,
+                  help='Column to use for color mapping; first col is 1.')
 
   ag = ap.add_argument_group('Preprocessing Options')
   ag.add_argument('--smooth', type=int, default=1,
@@ -82,10 +84,15 @@ def preprocess(data, opts):
 
 
 def plot(data, opts):
+  if opts.color:
+    c = data[:,opts.color-1]
+    data = np.delete(data, opts.color-1, axis=1)
+  else:
+    c = None
   if opts.three_d:
-    return plot_3d(data, opts.marker)
+    return plot_3d(data, opts.marker, color=c)
   if opts.two_d:
-    return plot_2d(data, opts.marker, log=opts.log)
+    return plot_2d(data, opts.marker, color=c, log=opts.log)
   if opts.x:
     xdata = data[:,0]
     data = data[:,1:]
@@ -94,7 +101,7 @@ def plot(data, opts):
     data = data[:,1:]
   else:
     xdata = None
-  plot_1d(xdata, data, opts.marker, log=opts.log)
+  plot_1d(xdata, data, opts.marker, color=c, log=opts.log)
 
 
 def decorate(opts, filename, ax=None):
@@ -129,7 +136,7 @@ def rolling_plot(opts, fh, filename):
       ('-x',opts.x), ('--time',opts.time), ('--hist', opts.hist),
       ('--smooth > 1', opts.smooth > 1), ('--downsample', opts.downsample),
       ('--columns', opts.columns), ('--skip', opts.skip),
-      ('--comment', opts.comment != '#')
+      ('--comment', opts.comment != '#'), ('--color', opts.color is not None)
   ]
   for name,check in disallowed_options:
     if check:
