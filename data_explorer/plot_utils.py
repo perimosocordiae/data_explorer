@@ -3,11 +3,12 @@ from matplotlib import pyplot
 
 
 def _make_plot_func(ax, marker, color, cmap):
-  kwargs = dict(cmap=cmap)
+  kwargs = dict()
   if marker is not None:
     kwargs['marker'] = marker
   if color is not None:
     kwargs['c'] = color
+    kwargs['cmap'] = cmap
     fn = lambda *args: ax.scatter(*args, **kwargs)
   else:
     fn = lambda *args: ax.plot(*args, **kwargs)
