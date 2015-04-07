@@ -10,7 +10,6 @@ def _make_plot_func(ax, marker, color, cmap):
     kwargs['c'] = color
     fn = lambda *args: ax.scatter(*args, **kwargs)
   else:
-    kwargs['hold'] = True
     fn = lambda *args: ax.plot(*args, **kwargs)
   return fn
 
