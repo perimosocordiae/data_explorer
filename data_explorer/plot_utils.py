@@ -3,7 +3,9 @@ from matplotlib import pyplot
 
 
 def _make_plot_func(ax, marker, color, cmap):
-  kwargs = dict(marker=marker, cmap=cmap)
+  kwargs = dict(cmap=cmap)
+  if marker is not None:
+    kwargs['marker'] = marker
   if color is not None:
     kwargs['c'] = color
     fn = lambda *args: ax.scatter(*args, **kwargs)
@@ -13,7 +15,7 @@ def _make_plot_func(ax, marker, color, cmap):
   return fn
 
 
-def plot_1d(xdata, data, marker, color=None, log=False, cmap=None):
+def plot_1d(xdata, data, marker=None, color=None, log=False, cmap=None):
   data = np.column_stack((data,))
   ax = pyplot.gca()
   plot = _make_plot_func(ax, marker, color, cmap)
@@ -29,7 +31,7 @@ def plot_1d(xdata, data, marker, color=None, log=False, cmap=None):
     pyplot.colorbar(p)
 
 
-def plot_2d(data, marker, color=None, log=False, cmap=None):
+def plot_2d(data, marker=None, color=None, log=False, cmap=None):
   assert data.shape[1] % 2 == 0, (
       'must have even number of columns for paired plotting')
   ax = pyplot.gca()
@@ -42,7 +44,7 @@ def plot_2d(data, marker, color=None, log=False, cmap=None):
     pyplot.colorbar(p)
 
 
-def plot_3d(data, marker, color=None, log=False, cmap=None):
+def plot_3d(data, marker=None, color=None, log=False, cmap=None):
   assert data.shape[1] % 3 == 0, 'must have columns div. by 3'
   from mpl_toolkits.mplot3d import Axes3D
   ax = Axes3D(pyplot.gcf())

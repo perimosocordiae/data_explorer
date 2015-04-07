@@ -36,8 +36,8 @@ def parse_args():
                   help='Start of comment character (default: #)')
 
   ag = ap.add_argument_group('Styling Options')
-  ag.add_argument('--marker', type=str, default='-',
-                  help='Line style/marker flags [default: %(default)s]')
+  ag.add_argument('--marker', type=str, default=None,
+                  help='Line style/marker flag')
   ag.add_argument('--xlabel', type=str, default='', help='X axis label')
   ag.add_argument('--ylabel', type=str, default='', help='Y axis label')
   ag.add_argument('--title', type=str, default='%s',
@@ -91,11 +91,11 @@ def plot(data, opts):
     data = np.delete(data, opts.color-1, axis=1)
   else:
     c = None
-  kwargs = dict(color=c, log=opts.log, cmap=opts.colormap)
+  kwargs = dict(marker=opts.marker, color=c, log=opts.log, cmap=opts.colormap)
   if opts.three_d:
-    return plot_3d(data, opts.marker, **kwargs)
+    return plot_3d(data, **kwargs)
   if opts.two_d:
-    return plot_2d(data, opts.marker, **kwargs)
+    return plot_2d(data, **kwargs)
   if opts.x:
     xdata = data[:,0]
     data = data[:,1:]
@@ -104,7 +104,7 @@ def plot(data, opts):
     data = data[:,1:]
   else:
     xdata = None
-  plot_1d(xdata, data, opts.marker, **kwargs)
+  plot_1d(xdata, data, **kwargs)
 
 
 def decorate(opts, filename, ax=None):
@@ -149,12 +149,13 @@ def rolling_plot(opts, fh, filename):
   fig, ax = pyplot.subplots()
   ax.set_autoscale_on(True)
   decorate(opts, filename, ax=ax)
+  marker = opts.marker or '-'
 
   data = np.zeros(opts.rolling)
   if opts.log:
-    line2d, = ax.semilogy(data+1, opts.marker)
+    line2d, = ax.semilogy(data+1, marker)
   else:
-    line2d, = ax.plot(data, opts.marker)
+    line2d, = ax.plot(data, marker)
 
   buf = deque(maxlen=opts.rolling)
   delim = opts.delim if opts.delim is not None else ' '
