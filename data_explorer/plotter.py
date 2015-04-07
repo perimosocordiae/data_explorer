@@ -46,6 +46,8 @@ def parse_args():
                   help='Legend labels, comma-separated')
   ag.add_argument('--color', type=int, default=None,
                   help='Column to use for color mapping; first col is 1.')
+  ag.add_argument('--colormap', type=str, default='jet',
+                  help='Name of colormap to use (default: jet)')
 
   ag = ap.add_argument_group('Preprocessing Options')
   ag.add_argument('--smooth', type=int, default=1,
@@ -89,10 +91,11 @@ def plot(data, opts):
     data = np.delete(data, opts.color-1, axis=1)
   else:
     c = None
+  kwargs = dict(color=c, log=opts.log, cmap=opts.colormap)
   if opts.three_d:
-    return plot_3d(data, opts.marker, color=c)
+    return plot_3d(data, opts.marker, **kwargs)
   if opts.two_d:
-    return plot_2d(data, opts.marker, color=c, log=opts.log)
+    return plot_2d(data, opts.marker, **kwargs)
   if opts.x:
     xdata = data[:,0]
     data = data[:,1:]
@@ -101,7 +104,7 @@ def plot(data, opts):
     data = data[:,1:]
   else:
     xdata = None
-  plot_1d(xdata, data, opts.marker, color=c, log=opts.log)
+  plot_1d(xdata, data, opts.marker, **kwargs)
 
 
 def decorate(opts, filename, ax=None):
