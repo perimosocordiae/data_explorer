@@ -4,14 +4,17 @@ from matplotlib import pyplot
 
 def _make_plot_func(ax, marker, color, cmap):
   kwargs = dict()
-  if marker is not None:
-    kwargs['marker'] = marker
   if color is not None:
     kwargs['c'] = color
     kwargs['cmap'] = cmap
+    if marker is not None:
+      kwargs['marker'] = marker
     fn = lambda *args: ax.scatter(*args, **kwargs)
   else:
-    fn = lambda *args: ax.plot(*args, **kwargs)
+    if marker is not None:
+      fn = lambda *args: ax.plot(*(args + (marker,)), **kwargs)
+    else:
+      fn = lambda *args: ax.plot(*args, **kwargs)
   return fn
 
 
