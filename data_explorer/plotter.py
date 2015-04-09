@@ -93,16 +93,21 @@ def plot(data, opts):
     c = None
   kwargs = dict(marker=opts.marker, color=c, log=opts.log, cmap=opts.colormap)
   if opts.three_d:
+    assert data.shape[1] >= 3
     return plot_3d(data, **kwargs)
   if opts.two_d:
+    assert data.shape[1] >= 2
     return plot_2d(data, **kwargs)
   if opts.x:
+    assert data.shape[1] >= 2
     xdata = data[:,0]
     data = data[:,1:]
   elif opts.time:
+    assert data.shape[1] >= 2
     xdata = map(datetime.fromtimestamp, data[:,0])
     data = data[:,1:]
   else:
+    assert data.shape[1] >= 1
     xdata = None
   plot_1d(xdata, data, **kwargs)
 
