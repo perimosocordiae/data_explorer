@@ -41,7 +41,7 @@ def parse_args():
   ag.add_argument('--xlabel', type=str, default='', help='X axis label')
   ag.add_argument('--ylabel', type=str, default='', help='Y axis label')
   ag.add_argument('--title', type=str, default='%s',
-                  help='Plot title (%s expands to filename)')
+                  help='Plot title (%(default)s expands to filename)')
   ag.add_argument('--legend', type=str, default='',
                   help='Legend labels, comma-separated')
   ag.add_argument('--color', type=int, default=None,
