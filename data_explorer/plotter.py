@@ -107,7 +107,6 @@ def plot(data, opts):
     xdata = map(datetime.fromtimestamp, data[:,0])
     data = data[:,1:]
   else:
-    assert data.shape[1] >= 1
     xdata = None
   plot_1d(xdata, data, **kwargs)
 
