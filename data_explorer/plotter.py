@@ -127,7 +127,7 @@ def static_plot(opts, fh, filename):
   else:
     cols = None
   data = np.loadtxt(fh, delimiter=opts.delim, usecols=cols,
-                    skip_header=opts.skip, comments=opts.comment)
+                    skiprows=opts.skip, comments=opts.comment)
   data = preprocess(data, opts)
   pyplot.figure()
   if opts.hist > 0:
