@@ -1,18 +1,21 @@
 #!/usr/bin/env python
-from data_explorer.plot_utils import plot_1d, plot_2d, plot_3d
-import re
 import numpy as np
+import re
+from argparse import ArgumentParser
+from collections import deque
 from datetime import datetime
 from matplotlib import pyplot, animation
 from sys import stdin
-from argparse import ArgumentParser
-from collections import deque
+
+from data_explorer.plot_utils import plot_1d, plot_2d, plot_3d
 
 
 def parse_args():
   ap = ArgumentParser(description='General-purpose plotter for columns of data')
   ap.add_argument('files', nargs='*', default=('-',), help='File(s) to plot')
-  ap.add_argument('--log', action='store_true', default=False,
+  ap.add_argument('--logx', action='store_true', default=False,
+                  help='Use a log scale for the x axis')
+  ap.add_argument('--logy', action='store_true', default=False,
                   help='Use a log scale for the y axis')
   ap.add_argument('--hist', type=int, default=0,
                   help='When >0, plots a histogram with n buckets')
@@ -36,6 +39,8 @@ def parse_args():
                   help='Start of comment character (default: #)')
 
   ag = ap.add_argument_group('Styling Options')
+  ag.add_argument('--autolabel', action='store_true', default=None,
+                  help='Infer labels from a header row.')
   ag.add_argument('--marker', type=str, default=None,
                   help='Line style/marker flag')
   ag.add_argument('--xlabel', type=str, default='', help='X axis label')
@@ -85,40 +90,47 @@ def preprocess(data, opts):
   return data
 
 
-def plot(data, opts):
+def plot(ax, data, col_names, opts):
   if opts.color:
-    c = data[:,opts.color-1]
-    data = np.delete(data, opts.color-1, axis=1)
+    idx = opts.color - 1
+    c = data[:, idx]
+    data = np.delete(data, idx, axis=1)
+    cname = col_names.pop(idx)
   else:
-    c = None
-  kwargs = dict(marker=opts.marker, color=c, log=opts.log, cmap=opts.colormap)
+    c, cname = None, None
+  kwargs = dict(marker=opts.marker, color=c, logx=opts.logx, logy=opts.logy,
+                cmap=opts.colormap, colorname=cname)
+
   if opts.three_d:
     assert data.shape[1] >= 3
-    return plot_3d(data, **kwargs)
+    return plot_3d(ax, data, col_names[:3], **kwargs)
+
   if opts.two_d:
     assert data.shape[1] >= 2
-    return plot_2d(data, **kwargs)
-  if opts.x:
+    return plot_2d(ax, data, col_names[:2], **kwargs)
+
+  if opts.x or opts.time:
     assert data.shape[1] >= 2
     xdata = data[:,0]
     data = data[:,1:]
-  elif opts.time:
-    assert data.shape[1] >= 2
-    xdata = map(datetime.fromtimestamp, data[:,0])
-    data = data[:,1:]
+    if opts.time:
+      xdata = map(datetime.fromtimestamp, xdata)
+    xlabel = col_names.pop()
   else:
-    xdata = None
-  plot_1d(xdata, data, **kwargs)
+    xdata, xlabel = None, ''
+  plot_1d(ax, xdata, data, xlabel, col_names, **kwargs)
 
 
-def decorate(opts, filename, ax=None):
-  if ax is None:
-    ax = pyplot.gca()
-  ax.set_xlabel(opts.xlabel)
-  ax.set_ylabel(opts.ylabel)
-  ax.set_title(re.subn('%s', filename, opts.title)[0])
+def decorate(ax, opts, filename):
+  ax.set_title(re.subn(r'%s', filename, opts.title)[0])
+  if opts.xlabel:
+    ax.set_xlabel(opts.xlabel)
+  if opts.ylabel:
+    ax.set_ylabel(opts.ylabel)
   if opts.legend:
     ax.legend(opts.legend.split(','), loc='best')
+  elif opts.autolabel:
+    ax.legend(loc='best')
 
 
 def static_plot(opts, fh, filename):
@@ -126,15 +138,23 @@ def static_plot(opts, fh, filename):
     cols = [c-1 for c in opts.columns]
   else:
     cols = None
-  data = np.loadtxt(fh, delimiter=opts.delim, usecols=cols,
-                    skiprows=opts.skip, comments=opts.comment)
-  data = preprocess(data, opts)
-  pyplot.figure()
-  if opts.hist > 0:
-    pyplot.hist(data, opts.hist)
+  data = np.genfromtxt(fh, delimiter=opts.delim, usecols=cols,
+                       skip_header=opts.skip, comments=opts.comment,
+                       invalid_raise=False, names=opts.autolabel)
+  if opts.autolabel:
+    col_names = list(data.dtype.names)
+    data = data.view(float).reshape((-1, len(col_names)))
   else:
-    plot(data, opts)
-  decorate(opts, filename)
+    col_names = [''] * data.shape[1]
+  data = preprocess(data, opts)
+
+  kw = dict(projection='3d') if opts.three_d else None
+  _, ax = pyplot.subplots(subplot_kw=kw)
+  if opts.hist > 0:
+    ax.hist(data, opts.hist, label=col_names)
+  else:
+    plot(ax, data, col_names, opts)
+  decorate(ax, opts, filename)
 
 
 def rolling_plot(opts, fh, filename):
@@ -152,14 +172,16 @@ def rolling_plot(opts, fh, filename):
 
   fig, ax = pyplot.subplots()
   ax.set_autoscale_on(True)
-  decorate(opts, filename, ax=ax)
+  decorate(ax, opts, filename)
   marker = opts.marker or '-'
 
   data = np.zeros(opts.rolling)
-  if opts.log:
-    line2d, = ax.semilogy(data+1, marker)
-  else:
-    line2d, = ax.plot(data, marker)
+  if opts.logy:
+    data += 1
+    ax.set_yscale('log')
+  if opts.logx:
+    ax.set_xscale('log')
+  line2d, = ax.plot(data, marker)
 
   buf = deque(maxlen=opts.rolling)
   delim = opts.delim if opts.delim is not None else ' '
@@ -179,9 +201,16 @@ def rolling_plot(opts, fh, filename):
 if __name__ == '__main__':
   args = parse_args()
   for f in args.files:
-    fh = stdin if f == '-' else open(f)
+    if f == '-':
+      fh = stdin
+      f = '<stdin>'
+    else:
+      fh = open(f)
+
     if args.rolling:
       _ = rolling_plot(args, fh, f)
     else:
       static_plot(args, fh, f)
+      fh.close()
+
   pyplot.show()
