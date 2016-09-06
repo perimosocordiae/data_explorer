@@ -115,7 +115,7 @@ def plot(ax, data, col_names, opts):
     data = data[:,1:]
     if opts.time:
       xdata = map(datetime.fromtimestamp, xdata)
-    xlabel = col_names.pop()
+    xlabel = col_names.pop(0)
   else:
     xdata, xlabel = None, ''
   plot_1d(ax, xdata, data, xlabel, col_names, **kwargs)
